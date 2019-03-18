@@ -1,0 +1,13 @@
+---
+- hosts: testing1
+  become: true
+  become_user: root
+  become_method: sudo
+  tasks:
+  - name: start s.sh script
+    shell: /home/sanjay/scripts/s.sh > /tmp/out2 2>&1; cat /tmp/out2|grep -iw 'command not found' > /dev/null; if [ $? == 0 ]; then echo 'failed'; else echo 'success'; fi
+    register: s_check
+  - debug: msg="s.sh failed"
+    when: s_check.stdout == "failed"
+  - debug: msg="s.sh success"
+    when: s_check.stdout == "success"
