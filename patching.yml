@@ -1,5 +1,6 @@
+
 ---
-- hosts: testing1
+- hosts: testing3
   become: true
   become_user: root
   tasks:
@@ -8,3 +9,22 @@
     ignore_errors: true
     register: app_proc_check
   - debug: msg="{{ app_proc_check.stdout  }}"
+
+  - name: Decision point to start patching
+    fail: msg="{{ inventory_hostname }} have running processes. please stop the application first then attempt patching"
+    when: app_proc_check.stdout == "process_running"
+
+  - name: upgrade all packages on the server
+    yum:
+     name=httpd
+     state=latest
+    when: app_proc_check.stdout == "process_not_running"
+    register: yum_httpd
+  - debug: msg="httpd has been updated"
+    when: yum_httpd.rc == 0
+
+  - name: Starting httpd service
+    service:
+     name=httpd
+     state=started
+    when: yum_httpd.rc == 0
